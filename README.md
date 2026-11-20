@@ -1,1 +1,61 @@
-# EveOnlineShipFittingSkill
+# EVE Online Ship Fitting Skill
+
+A Codex/agent skill that builds, adapts and verifies EVE Online ship fits. You
+ask for a hull and a purpose ("a solo low-sec PvP Rifter"), and it returns a
+ready-to-paste EFT block that has been checked against current game data and
+proven flyable in the fitting engine.
+
+The skill lives in [`evefit/`](evefit/SKILL.md); `SKILL.md` is the instruction
+file the agent follows, and everything else is its references and tooling.
+
+## How it works
+
+1. **Find a baseline fit.** It looks for a public fit for the same hull and role
+   first — fit libraries and EVE YouTube content, reading the video description
+   and comments before extracting frames. Only when nothing usable exists does
+   it design from scratch (asking about activity, space, and budget first).
+2. **Use current numbers.** Module stats, slots, CPU/PG, calibration and skill
+   requirements come from the official EVE Static Data Export (SDE) cached
+   locally, so remembered or outdated numbers are not trusted.
+3. **Prove the fit flies.** It normalizes the EFT text, checks every item name
+   against the SDE, then runs EVEShip.fit's `dogma-engine` to confirm CPU,
+   powergrid, calibration, slots, drones and charges fit with all skills at V.
+   It reports EHP, DPS and capacitor stability along with any rule violations.
+4. **Deliver with provenance.** The answer is the EFT block plus a one-line
+   validation result, and for video-sourced fits the URL and timestamp of the
+   description, comment or frame the fit came from.
+
+`dogma-engine` ships native code, so the skill has a trust gate: the engine is
+downloaded, hashed and reviewed before it is installed, and the approval is
+re-checked on every version, wheel or SDE change.
+
+## Quick start
+
+Requires Python 3 and network access for the first SDE download.
+
+```bash
+cd evefit
+python3 scripts/trust.py status          # is a reviewed engine version installed?
+python3 scripts/trust.py prepare         # fetch the latest engine for review
+python3 scripts/evefit.py status         # cached/latest SDE and engine versions
+python3 scripts/evefit.py update         # cache the latest SDE (~15 s)
+python3 scripts/evefit.py ship "Rifter"  # slots, CPU/PG, calibration
+python3 scripts/evefit.py validate fit.eft
+```
+
+`validate` exits with code 2 when the fit breaks a fitting rule, which makes it
+usable as a check in scripts. YouTube helpers (`evefit.py youtube ...`) install
+`yt-dlp` in the skill's private virtualenv on first use.
+
+## Layout
+
+| Path | Purpose |
+| --- | --- |
+| `evefit/SKILL.md` | Agent instructions: rules, workflow and answer format |
+| `evefit/references/` | EFT syntax, fitting constraints, public fit sources, trust policy, YouTube extraction |
+| `evefit/scripts/evefit.py` | SDE cache, searches, EFT validation, YouTube commands |
+| `evefit/scripts/evefityt.py` | YouTube metadata, description/comment fits, frame extraction |
+| `evefit/scripts/trust.py` | Wheel review, approval and installed-file verification |
+
+Data and the private virtualenv live in the user cache directory
+(`~/.cache/evefit` by default, override with `EVEFIT_CACHE`).
