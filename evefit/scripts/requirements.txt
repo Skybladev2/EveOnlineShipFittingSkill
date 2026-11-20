@@ -1,0 +1,4 @@
+# Exact versions are approved by scripts/trust.py; do not install without review.
+eveshipfit-dogma-engine==15.2.0
+eveshipfit-sde==14.3720952.0
+yt-dlp>=2024.12

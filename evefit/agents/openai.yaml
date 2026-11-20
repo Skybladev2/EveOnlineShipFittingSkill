@@ -1,0 +1,4 @@
+interface:
+  display_name: "EVE Fit Builder"
+  short_description: "Build and verify EVE ship fits from sites and YouTube"
+  default_prompt: "Use $evefit to build a flyable EVE Online ship fit for my request."
