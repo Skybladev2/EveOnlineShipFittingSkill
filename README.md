@@ -11,9 +11,10 @@ file the agent follows, and everything else is its references and tooling.
 ## How it works
 
 1. **Find a baseline fit.** It looks for a public fit for the same hull and role
-   first — fit libraries and EVE YouTube content, reading the video description
-   and comments before extracting frames. Only when nothing usable exists does
-   it design from scratch (asking about activity, space, and budget first).
+   first — fit libraries, PvP losses on zkillboard, and EVE YouTube content,
+   reading the video description and comments before extracting frames. Only
+   when nothing usable exists does it design from scratch (asking about
+   activity, space, and budget first).
 2. **Use current numbers.** Module stats, slots, CPU/PG, calibration and skill
    requirements come from the official EVE Static Data Export (SDE) cached
    locally, so remembered or outdated numbers are not trusted.
@@ -24,6 +25,10 @@ file the agent follows, and everything else is its references and tooling.
 4. **Deliver with provenance.** The answer is the EFT block plus a one-line
    validation result, and for video-sourced fits the URL and timestamp of the
    description, comment or frame the fit came from.
+5. **Treat matchups as scenarios.** When comparing two ships it accounts for
+   speed, range control and transversal, the target's real resists, and
+   projected effects such as webs, neuts and ECM, instead of comparing paper
+   DPS against an ideal target.
 
 `dogma-engine` ships native code, so the skill has a trust gate: the engine is
 downloaded, hashed and reviewed before it is installed, and the approval is
@@ -52,10 +57,16 @@ usable as a check in scripts. YouTube helpers (`evefit.py youtube ...`) install
 | Path | Purpose |
 | --- | --- |
 | `evefit/SKILL.md` | Agent instructions: rules, workflow and answer format |
-| `evefit/references/` | EFT syntax, fitting constraints, public fit sources, trust policy, YouTube extraction |
+| `evefit/references/` | EFT syntax, fitting constraints, public fit sources, matchup simulation, trust policy, YouTube extraction |
 | `evefit/scripts/evefit.py` | SDE cache, searches, EFT validation, YouTube commands |
 | `evefit/scripts/evefityt.py` | YouTube metadata, description/comment fits, frame extraction |
 | `evefit/scripts/trust.py` | Wheel review, approval and installed-file verification |
 
 Data and the private virtualenv live in the user cache directory
 (`~/.cache/evefit` by default, override with `EVEFIT_CACHE`).
+
+## Copyright
+
+EVE Online and the EVE logo are the intellectual property of CCP hf. See
+[CCP.md](CCP.md) for the full notice and the license terms this project relies
+on.
