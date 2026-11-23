@@ -68,5 +68,5 @@ Data and the private virtualenv live in the user cache directory
 ## Copyright
 
 EVE Online and the EVE logo are the intellectual property of Fenris Creations
-(formerly CCP hf.). See [CCP.md](CCP.md) for the full notice and the license
+(formerly CCP hf.). See [FC.md](FC.md) for the full notice and the license
 terms this project relies on.
