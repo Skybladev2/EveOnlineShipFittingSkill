@@ -18,7 +18,8 @@ python3 scripts/trust.py status                 # approved build, installed matc
 python3 scripts/trust.py prepare                # download + scan the latest engine for review
 python3 scripts/trust.py approve --version V --notes "..."   # after reading the report
 python3 scripts/evefit.py status                # cached and latest SDE builds, engine versions
-python3 scripts/evefit.py update                # download + index latest SDE (cached, ~15 s)
+python3 scripts/evefit.py update                # download changed tables from the latest SDE release
+python3 scripts/evefit.py update --release ID   # pin a specific release (e.g. 20261120T165826Z)
 python3 scripts/evefit.py env update            # refresh dogma-engine's SDE package
 python3 scripts/evefit.py ship "Rifter"         # slots, CPU/PG, calibration, drones, rig size
 python3 scripts/evefit.py search "500MN MWD"    # exact SDE type names

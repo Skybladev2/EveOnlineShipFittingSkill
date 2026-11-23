@@ -2,7 +2,8 @@
 """evefit - build and validate EVE Online ship fits.
 
 Data comes from two places:
-  * the official EVE SDE (JSONL zip), cached under the evefit cache directory;
+  * the official EVE SDE over HTTP (sde.evetech.net), cached under the evefit
+    cache directory as JSON Lines tables;
   * EVEShip.fit's dogma-engine, which proves that CPU, powergrid, calibration,
     slots, drones, charges and skills allow the fit (all skills at level 5).
 
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import gzip
 import json
 import os
 import re
@@ -21,21 +23,20 @@ import subprocess
 import sys
 import time
 import urllib.request
-import zipfile
 from pathlib import Path
 
-SDE_LATEST_URL = (
-    "https://developers.eveonline.com/static-data/"
-    "eve-online-static-data-latest-jsonl.zip"
+SDE_API_URL = "https://sde.evetech.net"
+SDE_TENANT = "tranquility"
+SDE_TENANT_URL = f"{SDE_API_URL}/{SDE_TENANT}/"
+SDE_LATEST_URL = f"{SDE_TENANT_URL}latest/"
+SDE_TABLES = (
+    "types",
+    "groups",
+    "categories",
+    "dogmaAttributes",
+    "dogmaEffects",
+    "typeDogma",
 )
-SDE_EXTRACT = [
-    "types.jsonl",
-    "groups.jsonl",
-    "categories.jsonl",
-    "dogmaAttributes.jsonl",
-    "dogmaEffects.jsonl",
-    "typeDogma.jsonl",
-]
 REQUIREMENTS = "eveshipfit-dogma-engine[sde]>=15.0"
 YT_REQUIREMENTS = "yt-dlp>=2024.12"
 
@@ -111,8 +112,8 @@ def sde_root() -> Path:
     return cache_root() / "sde"
 
 
-def build_dir(build: int | str) -> Path:
-    return sde_root() / str(build)
+def build_dir(identifier: int | str) -> Path:
+    return sde_root() / str(identifier)
 
 
 def venv_python() -> Path:
@@ -202,58 +203,156 @@ def engine_versions() -> tuple[str, str] | None:
 # --------------------------------------------------------------------------
 
 
-def latest_sde_build(timeout: int = 20) -> int:
-    """Ask the official endpoint which build `latest` points at."""
-    req = urllib.request.Request(
-        SDE_LATEST_URL, method="HEAD", headers={"User-Agent": "evefit-skill"}
+def _sde_request(url: str, timeout: int = 30) -> urllib.request.Request:
+    return urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "evefit-skill",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip",
+        },
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        final = resp.geturl()
-    match = re.search(r"static-data-(\d+)-jsonl\.zip", final)
-    if not match:
-        raise RuntimeError(f"could not read build number from {final}")
-    return int(match.group(1))
 
 
-def cached_builds() -> list[int]:
+def fetch_sde_json(url: str, timeout: int = 30):
+    """Fetch one SDE API document, decompressing the CDN's gzip response."""
+    with urllib.request.urlopen(_sde_request(url, timeout), timeout=timeout) as resp:
+        raw = resp.read()
+        encoding = (resp.headers.get("Content-Encoding") or "").lower()
+    if "gzip" in encoding:
+        raw = gzip.decompress(raw)
+    return json.loads(raw.decode("utf-8"))
+
+
+def latest_sde_release(timeout: int = 30) -> dict:
+    """Return the release document that `/latest/` currently points at."""
+    doc = fetch_sde_json(SDE_LATEST_URL, timeout=timeout)
+    if not doc.get("release") or not isinstance(doc.get("tables"), dict):
+        raise RuntimeError("SDE latest response has no release or tables")
+    return doc
+
+
+def release_for_build(build: int, timeout: int = 30) -> dict:
+    """Resolve a build number to a release; newer releases win ties."""
+    tenant = fetch_sde_json(SDE_TENANT_URL, timeout=timeout)
+    for entry in tenant.get("releases", []):
+        doc = fetch_sde_json(entry["releaseUrl"], timeout=timeout)
+        if int(doc.get("buildNumber", -1)) == build:
+            return doc
+    raise RuntimeError(
+        f"build {build} is not in the retained releases; use --release with "
+        f"a release id from {SDE_TENANT_URL}"
+    )
+
+
+def release_url(release: str) -> str:
+    return f"{SDE_TENANT_URL}{release}/"
+
+
+def cached_releases() -> list[dict]:
+    """Cached releases, newest first; old zip caches are still readable."""
     if not sde_root().is_dir():
         return []
-    out = []
-    for p in sde_root().iterdir():
-        if p.is_dir() and p.name.isdigit() and (p / "index.json").exists():
-            out.append(int(p.name))
-    return sorted(out, reverse=True)
+    out: list[dict] = []
+    for path in sde_root().iterdir():
+        if not path.is_dir() or not (path / "index.json").exists():
+            continue
+        manifest = path / "manifest.json"
+        try:
+            meta = load_json(manifest) if manifest.exists() else {}
+        except Exception:
+            meta = {}
+        release = meta.get("release")
+        build = meta.get("build")
+        if build is None:
+            try:
+                build = load_json(path / "index.json").get("build")
+            except Exception:
+                build = int(path.name) if path.name.isdigit() else 0
+        if release:
+            out.append(
+                {
+                    "release": release,
+                    "build": int(build or 0),
+                    "releaseDate": meta.get("releaseDate", ""),
+                    "source": meta.get("source", release_url(release)),
+                    "tables": meta.get("tables", {}),
+                    "dir": path,
+                }
+            )
+        elif path.name.isdigit():
+            out.append(
+                {
+                    "release": None,
+                    "build": int(path.name),
+                    "releaseDate": "",
+                    "source": "",
+                    "tables": {},
+                    "dir": path,
+                }
+            )
+    return sorted(
+        out,
+        key=lambda row: (
+            1 if row["release"] else 0,
+            row["releaseDate"] or row["release"] or "",
+            row["build"],
+        ),
+        reverse=True,
+    )
+
+
+def newest_cached_release() -> dict | None:
+    releases = cached_releases()
+    return releases[0] if releases else None
 
 
 def newest_cached_build() -> int | None:
-    builds = cached_builds()
-    return builds[0] if builds else None
+    release = newest_cached_release()
+    return release["build"] if release else None
 
 
-def download_sde(build: int, dest: Path) -> Path:
-    url = (
-        "https://developers.eveonline.com/static-data/tranquility/"
-        f"eve-online-static-data-{build}-jsonl.zip"
-    )
-    tmp = dest / "sde.zip.part"
-    log(f"evefit: downloading SDE {build} (~100 MB)")
+def download_sde_table(table: str, meta: dict, dest: Path) -> Path:
+    """Download one gzip JSON Lines table and leave it uncompressed on disk."""
+    url = meta["jsonl"]["url"]
+    tmp = dest / f"{table}.jsonl.part"
+    target = dest / f"{table}.jsonl"
+    log(f"evefit: downloading {table}")
     start = time.time()
-    with urllib.request.urlopen(
-        urllib.request.Request(url, headers={"User-Agent": "evefit-skill"}), timeout=300
-    ) as resp, open(tmp, "wb") as fh:
-        shutil.copyfileobj(resp, fh, length=1 << 20)
-    tmp.replace(dest / "sde.zip")
-    log(f"evefit: downloaded {((dest / 'sde.zip').stat().st_size) / 1e6:.1f} MB "
+    with urllib.request.urlopen(_sde_request(url, 300), timeout=300) as resp:
+        encoding = (resp.headers.get("Content-Encoding") or "").lower()
+        body = gzip.GzipFile(fileobj=resp) if "gzip" in encoding else resp
+        with open(tmp, "wb") as fh:
+            shutil.copyfileobj(body, fh, length=1 << 20)
+    tmp.replace(target)
+    log(f"evefit: {table} {target.stat().st_size / 1e6:.1f} MB "
         f"in {time.time() - start:.0f}s")
-    return dest / "sde.zip"
+    return target
 
 
-def build_indexes(dest: Path, build: int) -> None:
+def reuse_sde_table(previous: dict | None, table: str, meta: dict, dest: Path) -> bool:
+    """Copy a table from the previous release when its version is unchanged."""
+    if not previous:
+        return False
+    old = (previous.get("tables") or {}).get(table) or {}
+    source = previous["dir"] / f"{table}.jsonl"
+    if old.get("version") != meta.get("version") or not source.exists():
+        return False
+    target = dest / f"{table}.jsonl"
+    try:
+        os.link(source, target)
+    except OSError:
+        shutil.copy2(source, target)
+    log(f"evefit: reusing {table} (unchanged since {previous.get('release') or previous['build']})")
+    return True
+
+
+def build_indexes(dest: Path, build: int, release: str | None = None) -> None:
     groups: dict[int, tuple[str, int]] = {}
     with open(dest / "groups.jsonl", encoding="utf-8") as fh:
         for line in fh:
             row = json.loads(line)
-            groups[row["_key"]] = (row["name"]["en"], row["categoryID"])
+            groups[row["groupID"]] = (row["name"]["en"], row["categoryID"])
 
     types: dict[str, list] = {}
     ship_ids: set[int] = set()
@@ -261,7 +360,7 @@ def build_indexes(dest: Path, build: int) -> None:
     with open(dest / "types.jsonl", encoding="utf-8") as fh:
         for line in fh:
             row = json.loads(line)
-            tid = row["_key"]
+            tid = row["typeID"]
             gid = row.get("groupID", 0)
             gname, cat = groups.get(gid, ("", 0))
             name = row.get("name", {}).get("en", "")
@@ -273,16 +372,18 @@ def build_indexes(dest: Path, build: int) -> None:
             elif cat == CAT_SKILL:
                 skill_ids.append(tid)
 
+    index = {"build": build, "types": types}
+    if release:
+        index["release"] = release
     (dest / "index.json").write_text(
-        json.dumps({"build": build, "types": types}, separators=(",", ":")),
-        encoding="utf-8",
+        json.dumps(index, separators=(",", ":")), encoding="utf-8"
     )
 
     ships: dict[str, dict] = {}
     with open(dest / "typeDogma.jsonl", encoding="utf-8") as fh:
         for line in fh:
             row = json.loads(line)
-            tid = row["_key"]
+            tid = row["typeID"]
             if tid not in ship_ids:
                 continue
             attrs = {str(a["attributeID"]): a["value"] for a in row.get("dogmaAttributes", [])}
@@ -297,7 +398,7 @@ def build_indexes(dest: Path, build: int) -> None:
     with open(dest / "dogmaAttributes.jsonl", encoding="utf-8") as fh:
         for line in fh:
             row = json.loads(line)
-            attr_names[str(row["_key"])] = {
+            attr_names[str(row["attributeID"])] = {
                 "name": row["name"],
                 "display": row.get("displayName", {}).get("en", row["name"]),
             }
@@ -309,69 +410,109 @@ def build_indexes(dest: Path, build: int) -> None:
     with open(dest / "dogmaEffects.jsonl", encoding="utf-8") as fh:
         for line in fh:
             row = json.loads(line)
-            effect_names[str(row["_key"])] = row.get("name", "")
+            effect_names[str(row["effectID"])] = row.get("name", "")
     (dest / "effects.json").write_text(
         json.dumps(effect_names, separators=(",", ":")), encoding="utf-8"
     )
 
     skills = sorted(skill_ids)
-    (dest / "skills.json").write_text(
-        json.dumps({"build": build, "skills": skills}), encoding="utf-8"
-    )
+    skill_data = {"build": build, "skills": skills}
+    if release:
+        skill_data["release"] = release
+    (dest / "skills.json").write_text(json.dumps(skill_data), encoding="utf-8")
     # Keep a stable copy so validation still works if the build dir is pruned.
-    (cache_root() / "skills.json").write_text(
-        json.dumps({"build": build, "skills": skills}), encoding="utf-8"
-    )
+    (cache_root() / "skills.json").write_text(json.dumps(skill_data), encoding="utf-8")
 
 
-def ensure_sde(build: int | None = None, force: bool = False) -> int:
-    if build is None:
+def prune_releases(keep: int = 2) -> None:
+    """Keep the current and previous HTTP releases; drop older ones."""
+    releases = [row for row in cached_releases() if row["release"]]
+    for row in releases[keep:]:
+        shutil.rmtree(row["dir"], ignore_errors=True)
+
+
+def ensure_sde(release: dict | str | None = None, force: bool = False) -> dict:
+    if isinstance(release, str):
+        release = fetch_sde_json(release_url(release))
+    if release is None:
         try:
-            build = latest_sde_build()
+            release = latest_sde_release()
         except Exception as exc:  # offline fallback
-            cached = newest_cached_build()
+            cached = newest_cached_release()
             if cached is None:
-                sys.exit(f"cannot reach the SDE endpoint ({exc}) and no cache exists")
-            log(f"evefit: offline, using cached SDE build {cached}")
+                sys.exit(f"cannot reach the SDE API ({exc}) and no cache exists")
+            log(f"evefit: offline, using cached SDE release "
+                f"{cached.get('release') or cached['build']}")
             return cached
 
-    dest = build_dir(build)
+    rid = release.get("release")
+    if not rid:
+        sys.exit("SDE release document has no release id")
+    build = int(release.get("buildNumber") or release.get("build") or 0)
+    dest = build_dir(rid)
     if (dest / "index.json").exists() and not force:
-        return build
+        cached = next((row for row in cached_releases() if row["release"] == rid), None)
+        return cached or {
+            "release": rid,
+            "build": build,
+            "releaseDate": release.get("releaseDate", ""),
+            "source": release_url(rid),
+            "tables": release.get("tables", {}),
+            "dir": dest,
+        }
 
     dest.mkdir(parents=True, exist_ok=True)
-    zip_path = download_sde(build, dest)
-    log("evefit: extracting SDE")
-    with zipfile.ZipFile(zip_path) as zf:
-        for name in SDE_EXTRACT:
-            zf.extract(name, dest)
-    log("evefit: building indexes")
-    build_indexes(dest, build)
-    (dest / "manifest.json").write_text(
-        json.dumps(
-            {
-                "build": build,
-                "source": SDE_LATEST_URL,
-                "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            },
-            indent=2,
-        ),
-        encoding="utf-8",
+    previous = next(
+        (row for row in cached_releases() if row["release"] and row["release"] != rid),
+        None,
     )
-    for leftover in ("types.jsonl", "sde.zip"):
-        p = dest / leftover
-        if p.exists():
-            p.unlink()
-    log(f"evefit: SDE {build} ready at {dest}")
-    return build
+    tables = release.get("tables") or {}
+    for table in SDE_TABLES:
+        meta = tables.get(table)
+        if not meta or not meta.get("jsonl", {}).get("url"):
+            sys.exit(f"SDE release {rid} has no JSONL table {table}")
+        if not force and reuse_sde_table(previous, table, meta, dest):
+            continue
+        download_sde_table(table, meta, dest)
+
+    log("evefit: building indexes")
+    build_indexes(dest, build, rid)
+    manifest = {
+        "release": rid,
+        "build": build,
+        "releaseDate": release.get("releaseDate", ""),
+        "source": release_url(rid),
+        "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "tables": {
+            table: {
+                "version": (tables.get(table) or {}).get("version", ""),
+                "url": (tables.get(table) or {}).get("jsonl", {}).get("url", ""),
+            }
+            for table in SDE_TABLES
+        },
+    }
+    (dest / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    leftover = dest / "sde.zip"
+    if leftover.exists():
+        leftover.unlink()
+    prune_releases()
+    log(f"evefit: SDE {rid} (build {build}) ready at {dest}")
+    return {
+        "release": rid,
+        "build": build,
+        "releaseDate": release.get("releaseDate", ""),
+        "source": release_url(rid),
+        "tables": manifest["tables"],
+        "dir": dest,
+    }
 
 
 def data_dir() -> Path:
-    """Directory of the newest cached build, downloading it if needed."""
-    build = newest_cached_build()
-    if build is None:
-        build = ensure_sde()
-    return build_dir(build)
+    """Directory of the newest cached release, downloading it if needed."""
+    release = newest_cached_release()
+    if release is None:
+        release = ensure_sde()
+    return release["dir"]
 
 
 def load_json(path: Path):
@@ -398,9 +539,9 @@ def load_effect_names(build_path: Path | None = None) -> dict[str, str]:
 def load_skills() -> list[int]:
     path = cache_root() / "skills.json"
     if not path.exists():
-        build = newest_cached_build()
-        if build is not None and (build_dir(build) / "skills.json").exists():
-            return load_json(build_dir(build) / "skills.json")["skills"]
+        release = newest_cached_release()
+        if release is not None and (release["dir"] / "skills.json").exists():
+            return load_json(release["dir"] / "skills.json")["skills"]
         sys.exit("no skills index yet; run: evefit.py sde update")
     return load_json(path)["skills"]
 
@@ -454,45 +595,65 @@ def find_type(types: dict[str, list], query: str, exact: bool = False) -> tuple[
 
 def cmd_sde_status(args) -> None:
     print(f"cache: {cache_root()}")
-    builds = cached_builds()
-    print(f"cached SDE builds: {', '.join(map(str, builds)) if builds else 'none'}")
+    releases = cached_releases()
+    if releases:
+        shown = []
+        for row in releases:
+            if row["release"]:
+                shown.append(f"{row['release']} (build {row['build']})")
+            else:
+                shown.append(f"{row['build']} (legacy zip)")
+        print("cached SDE releases: " + ", ".join(shown))
+    else:
+        print("cached SDE releases: none")
     try:
-        latest = latest_sde_build()
-        print(f"latest official SDE build: {latest}")
+        latest = latest_sde_release()
+        latest_build = int(latest["buildNumber"])
+        print(f"latest official SDE release: {latest['release']} "
+              f"(build {latest_build}, {latest.get('releaseDate', '')})")
     except Exception as exc:
-        latest = None
-        print(f"latest official SDE build: unavailable ({exc})")
+        latest_build = None
+        print(f"latest official SDE release: unavailable ({exc})")
     versions = engine_versions()
     if versions:
         esf_sde = versions[1]
         engine_build = int(esf_sde.split(".")[1])
         print(f"dogma-engine: {versions[0]} | SDE package: {esf_sde} (build {engine_build})")
-        if latest and engine_build != latest:
+        if latest_build and engine_build != latest_build:
             print("WARNING: engine data is not the latest build; "
                   "run `evefit.py env update` to refresh it")
     else:
         print("dogma-engine: not installed (will bootstrap on validate)")
-    if builds:
-        print(f"lookup data will use build: {builds[0]}")
+    if releases:
+        row = releases[0]
+        label = row["release"] or f"build {row['build']}"
+        print(f"lookup data will use: {label}")
 
 
 def cmd_sde_update(args) -> None:
-    build = args.build
-    if build is None:
-        try:
-            build = latest_sde_build()
-        except Exception as exc:
-            cached = newest_cached_build()
-            if cached is None:
-                sys.exit(f"cannot determine latest build: {exc}")
-            log(f"evefit: offline ({exc}), keeping cached build {cached}")
-            build = cached
-    ensure_sde(build, force=args.force)
-    print(f"SDE {build} cached at {build_dir(build)}")
+    requested = None
+    pinned = bool(args.release or args.build)
+    try:
+        if args.release:
+            requested = fetch_sde_json(release_url(args.release))
+        elif args.build:
+            requested = release_for_build(args.build)
+        saved = ensure_sde(requested, force=args.force)
+    except Exception as exc:
+        if pinned:
+            sys.exit(f"cannot update SDE: {exc}")
+        cached = newest_cached_release()
+        if cached is None:
+            sys.exit(f"cannot update SDE: {exc}")
+        log(f"evefit: update failed ({exc}); keeping cached SDE "
+            f"{cached.get('release') or cached['build']}")
+        saved = cached
+    label = saved.get("release") or f"build {saved['build']}"
+    print(f"SDE {label} (build {saved['build']}) cached at {saved['dir']}")
     versions = engine_versions()
     if versions:
         engine_build = int(versions[1].split(".")[1])
-        if engine_build != build:
+        if engine_build != saved["build"]:
             log(f"evefit: dogma-engine still uses build {engine_build}; "
                 "run `python3 scripts/evefit.py env update`")
     else:
@@ -533,12 +694,17 @@ def cmd_doctor(args) -> None:
     if versions:
         print(f"dogma-engine: {versions[0]}")
         print(f"SDE package: {versions[1]}")
-    builds = cached_builds()
-    print(f"SDE cache: {builds[0] if builds else 'none'}")
+    releases = cached_releases()
+    if releases:
+        row = releases[0]
+        print(f"SDE cache: {row.get('release') or row['build']} (build {row['build']})")
+    else:
+        print("SDE cache: none")
     try:
-        print(f"official latest build: {latest_sde_build()}")
+        latest = latest_sde_release()
+        print(f"official latest: {latest['release']} (build {latest['buildNumber']})")
     except Exception as exc:
-        print(f"official latest build: unavailable ({exc})")
+        print(f"official latest: unavailable ({exc})")
     try:
         print(f"skills indexed: {len(load_skills())}")
     except SystemExit:
@@ -652,7 +818,7 @@ def cmd_attrs(args) -> None:
     with open(data_dir() / "typeDogma.jsonl", encoding="utf-8") as fh:
         for line in fh:
             d = json.loads(line)
-            if str(d["_key"]) != str(tid):
+            if str(d["typeID"]) != str(tid):
                 continue
             attrs = {str(x["attributeID"]): x["value"] for x in d.get("dogmaAttributes", [])}
             effects = [x["effectID"] for x in d.get("dogmaEffects", [])]
@@ -1057,7 +1223,11 @@ def main() -> None:
     p_status.set_defaults(func=cmd_sde_status)
 
     p_update = sub.add_parser("update", help="download and index the latest SDE")
-    p_update.add_argument("--build", type=int, help="pin a specific SDE build")
+    pinned = p_update.add_mutually_exclusive_group()
+    pinned.add_argument("--release", help="pin a specific SDE release id, "
+                        "for example 20261120T165826Z")
+    pinned.add_argument("--build", type=int, help="pin a build number; resolves "
+                        "to the newest retained release with that build")
     p_update.add_argument("--force", action="store_true", help="rebuild even if cached")
     p_update.set_defaults(func=cmd_sde_update)
 

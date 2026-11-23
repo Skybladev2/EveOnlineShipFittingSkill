@@ -16,8 +16,9 @@ file the agent follows, and everything else is its references and tooling.
    when nothing usable exists does it design from scratch (asking about
    activity, space, and budget first).
 2. **Use current numbers.** Module stats, slots, CPU/PG, calibration and skill
-   requirements come from the official EVE Static Data Export (SDE) cached
-   locally, so remembered or outdated numbers are not trusted.
+   requirements come from the official EVE Static Data Export (SDE), fetched
+   table by table from the `sde.evetech.net` HTTP API and cached by release, so
+   remembered or outdated numbers are not trusted.
 3. **Prove the fit flies.** It normalizes the EFT text, checks every item name
    against the SDE, then runs EVEShip.fit's `dogma-engine` to confirm CPU,
    powergrid, calibration, slots, drones and charges fit with all skills at V.
@@ -52,7 +53,7 @@ cd evefit
 python3 scripts/trust.py status          # is a reviewed engine version installed?
 python3 scripts/trust.py prepare         # fetch the latest engine for review
 python3 scripts/evefit.py status         # cached/latest SDE and engine versions
-python3 scripts/evefit.py update         # cache the latest SDE (~15 s)
+python3 scripts/evefit.py update         # cache changed tables from the latest SDE release
 python3 scripts/evefit.py ship "Rifter"  # slots, CPU/PG, calibration
 python3 scripts/evefit.py validate fit.eft
 ```
