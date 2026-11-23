@@ -895,6 +895,31 @@ def describe_violation(v: dict, index: dict[str, list], groups: dict[int, str]) 
     return f"{where}: {json.dumps(rule, separators=(',', ':'))}"
 
 
+CHARGE_MODULES = (
+    ("ancillary armor repairer", "Nanite Repair Paste"),
+    ("ancillary shield booster", "Cap Booster 50"),
+    ("capacitor booster", "Cap Booster 50"),
+)
+
+
+def charge_warnings(text: str) -> list[str]:
+    """Warn when a charge-fed module carries no charge on its own EFT line."""
+    warnings = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("[") or "," in line:
+            continue
+        low = line.lower()
+        for needle, charge in CHARGE_MODULES:
+            if needle in low:
+                warnings.append(
+                    f"{line}: no charge loaded; write '{line}, {charge}' on the module line "
+                    "(a cargo line does not load it)"
+                )
+                break
+    return warnings
+
+
 def cmd_validate(args) -> None:
     ensure_engine()
     import esf_dogma_engine as dogma
@@ -966,6 +991,7 @@ def cmd_validate(args) -> None:
             "ship": fit.get("ship", {}),
             "stats": stats,
             "violations": violations,
+            "warnings": charge_warnings(text),
             "eft": dogma.save_eft(fit),
         }, indent=2))
         raise SystemExit(0 if ok else 2)
@@ -986,6 +1012,8 @@ def cmd_validate(args) -> None:
     if stats["cap_stable"]:
         line += f" | cap stable {stats['cap_stable']:g}%"
     print(line)
+    for warning in charge_warnings(text):
+        print(f"warning: {warning}")
     if ok:
         print("RESULT: OK - CPU, powergrid, calibration, slots, drones, charges and skills fit")
     else:
