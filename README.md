@@ -38,6 +38,11 @@ file the agent follows, and everything else is its references and tooling.
 downloaded, hashed and reviewed before it is installed, and the approval is
 re-checked on every version, wheel or SDE change.
 
+If an EVEShip.fit MCP connector is authenticated in the agent runtime, the skill
+can also use its `find_variations`, `compare_fits` and `calculate_fit` tools for
+systematic variant checks. This is optional: the connector needs an EVE
+character login, and the local SDE and engine remain the fallback.
+
 ## Quick start
 
 Requires Python 3 and network access for the first SDE download.
@@ -61,13 +66,19 @@ usable as a check in scripts. YouTube helpers (`evefit.py youtube ...`) install
 | Path | Purpose |
 | --- | --- |
 | `evefit/SKILL.md` | Agent instructions: rules, workflow and answer format |
-| `evefit/references/` | EFT syntax, fitting constraints, public fit sources, matchup simulation, trust policy, YouTube extraction |
+| `evefit/references/` | EFT syntax, fitting constraints, public fit sources, matchup simulation, EVEShip.fit MCP, trust policy, YouTube extraction |
 | `evefit/scripts/evefit.py` | SDE cache, searches, EFT validation, YouTube commands |
 | `evefit/scripts/evefityt.py` | YouTube metadata, description/comment fits, frame extraction |
 | `evefit/scripts/trust.py` | Wheel review, approval and installed-file verification |
 
 Data and the private virtualenv live in the user cache directory
 (`~/.cache/evefit` by default, override with `EVEFIT_CACHE`).
+
+## License
+
+The source code and documentation in this repository are released under the
+[Unlicense](LICENSE). EVE Online game data and trademarks remain subject to the
+notices in [FC.md](FC.md).
 
 ## Copyright
 

@@ -23,3 +23,7 @@ Fenris Creations does not endorse, and is not in any way affiliated with,
 __EVE Online Ship Fitting Skill__. Fenris Creations is in no way responsible for
 the content on or functioning of this project, nor can it be liable for any
 damage arising from the use of this project.
+
+This notice covers EVE Online intellectual property and game data. The
+original code and documentation in this repository are released under the
+Unlicense; see [LICENSE](LICENSE).

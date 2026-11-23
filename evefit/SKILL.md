@@ -58,6 +58,18 @@ python3 scripts/evefit.py youtube frames ./local.mp4 --out ./yt-frames --interva
 - **Cheap boosters.** Add a booster that matches the fit's role when one dose costs under 10% of the same base price. Prefer the cheapest grade that gives the needed effect; Synth boosters have no side effects, while stronger grades cost more and can impose drawbacks. State the dose price and what is consumed per fight. Leave boosters out when the user rules them out.
 - **Realistic matchups.** When simulating one ship against another, never assume an ideal target or perfect application. Take into account both ships' movement (speed, signature, range control and transversal), the target's actual resist profile and tank, and projected effects from either side (webs, scrams, points, neuts, ECM, damps, tracking disruptors, paints, remote reps and links). State the range, transversal and tackle assumptions behind any DPS, EHP or "who wins" claim. See [references/matchups.md](references/matchups.md).
 
+## Optional EVEShip.fit MCP
+
+If the runtime already provides the EVEShip.fit MCP connector
+(`https://mcp.eveship.fit/mcp`), use it as an optional second opinion and for
+systematic variant testing. Its `find_variations` tool swaps meta and faction
+variants into a complete fit and recalculates the result; `compare_fits` shows
+every difference between two candidates; `calculate_fit` accepts a damage
+profile, security class and beacon. The public server needs an OAuth login with
+an EVE character, so it may be absent or unauthenticated. Never block a fit on
+it: draft and validate locally first, then use the connector to compare
+alternatives. See [references/eveshipfit-mcp.md](references/eveshipfit-mcp.md).
+
 ## Workflow
 
 0. Check the trust gate: `python3 scripts/trust.py status`. If no build is approved or an update is pending, run `prepare`, review the source and report, and `approve` before any validation. Never skip this because a version looks familiar.
@@ -66,7 +78,7 @@ python3 scripts/evefit.py youtube frames ./local.mp4 --out ./yt-frames --interva
 3. If the libraries have nothing usable, or the user referenced a video, search EVE YouTube for the hull and activity. Run `youtube info` and `youtube fits` to pull description and comment fits. When the text has no usable fit, run `youtube frames`, read the fitting window from the contact sheet, and transcribe the modules, rigs, drones and charges. If no ready-to-use fit turns up anywhere, assemble one from the SDE and the rules below.
 4. Draft the fit as EFT text. Keep slot order: low, mid, high, rigs, subsystems, drones, cargo, implants. Charges follow their module after a comma; drones use `xN`. See [references/eft-format.md](references/eft-format.md).
 5. Price the hull, modules, rigs, drones and charges, then decide on implants and boosters using the 20% and 10% limits below. Run `checknames`, then `validate`. Resolve every unknown name and every violation. Recover CPU, powergrid or calibration with fitting rigs and implants before accepting a module downgrade; see [references/fitting-constraints.md](references/fitting-constraints.md) and [references/budget-implants-boosters.md](references/budget-implants-boosters.md).
-6. Iterate on the design, not just the numbers: check that tank, damage application, range, speed and capacitor still serve the stated purpose after each downgrade or swap.
+6. Iterate on the design, not just the numbers: check that tank, damage application, range, speed and capacitor still serve the stated purpose after each downgrade or swap. If the EVEShip.fit MCP connector is available, use `find_variations` and `compare_fits` to test the shortlisted swaps in the complete fit; otherwise use `attrs` and repeated local `validate` runs.
 7. If the user asks how the fit fares against another ship, simulate the matchup on realistic terms: both ships moving, the defender at its actual resists, and projected effects from both sides applied. Cover more than one range band and transversal if the answer changes with them; do not report paper DPS against a stationary target as the result.
 8. Deliver the final EFT block, a one-line validation result (CPU/PG/calibration, EHP, DPS, cap stability), the source fit with its URL and video timestamp when applicable, and the main adaptations you made. Name any implants and boosters, their effect, and their price share of the base fit. For a matchup, add the assumptions and the ranges where the outcome changes.
 
