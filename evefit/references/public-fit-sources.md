@@ -17,10 +17,10 @@ Use these sites as baselines. Browse is public on all of them; creating or publi
 
 ## How to use a baseline
 
-1. Match hull and purpose first, then environment. A nullsec doctrine fit flown in a wormhole needs different resists, prop and cap. For PvP, cross-check the library fit against current killmail losses of the same hull in the same space.
+1. Prefer a vetted, ready-to-use community fit: a published doctrine or library fit with a stated purpose, a recent date and signs of repeated use. Match hull and purpose first, then environment. A nullsec doctrine fit flown in a wormhole needs different resists, prop and cap. For PvP, cross-check the library fit against current killmail losses of the same hull in the same space.
 2. Copy the module list, rigs, drones and ammo exactly into a local `.eft` file.
 3. Run `evefit.py validate` on it before changing anything. Old public fits often predate balance patches, so expect CPU/PG or calibration drift.
-4. Adapt toward the user's budget and skill assumptions; record what changed.
+4. Adapt toward the user's budget and skill assumptions; record what changed. If no ready-to-use fit exists, assemble one from the SDE and the fitting rules. Either path ends with `checknames` and `validate`; community reputation never replaces a formal check.
 
 Fit editors such as https://eveship.fit, https://www.eve-webtools.com/Fitlab/ and https://evefit.online can render a shared fit but are not browsable libraries, so use them only to inspect a specific link.
 

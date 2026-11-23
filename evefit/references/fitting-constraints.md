@@ -30,8 +30,10 @@ Common SDE attribute IDs for drafting:
 
 ## Recovering resources
 
-- CPU: swap to a lower meta level (Compact/Enduring versions usually save CPU), use a CPU implant, fit a Small Processor Overclocking Unit rig, drop a utility module, or replace an oversized tank module with a smaller one.
-- Powergrid: lower meta level, use an Auxiliary Power Core or Reactor Control Unit, drop a plate/extender, or move to a smaller weapon size.
+- CPU: swap to a lower meta level (Compact/Enduring versions usually save CPU), fit a Processor Overclocking Unit rig, use a Zainou 'Gypsy' CPU Management implant, drop a utility module, or replace an oversized tank module with a smaller one.
+- Powergrid: lower meta level, fit an Ancillary Current Router rig, use an Inherent Implants 'Squire' Power Grid Management implant, use a Micro Auxiliary Power Core or Reactor Control Unit, drop a plate/extender, or move to a smaller weapon size.
+- Implant slot: the CPU and powergrid hardwirings both use slot 6, so a fit cannot use both. Pick the one that covers the larger shortfall.
+- Price check: add a fitting implant only when it costs under 20% of the base fit price, and a booster only when a dose costs under 10%; see [budget-implants-boosters.md](budget-implants-boosters.md).
 - Calibration: use smaller rigs or replace one rig with a cheaper alternative; rigs cannot be removed partially.
 - Slots/hardpoints: weapon size and count are fixed by hardpoints; utility highs and launchers compete for the same high slots.
 - Drones: check bay volume, bandwidth and the number of launched drones separately; a full bay can still exceed bandwidth.

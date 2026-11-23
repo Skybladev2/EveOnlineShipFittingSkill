@@ -22,6 +22,10 @@ file the agent follows, and everything else is its references and tooling.
    against the SDE, then runs EVEShip.fit's `dogma-engine` to confirm CPU,
    powergrid, calibration, slots, drones and charges fit with all skills at V.
    It reports EHP, DPS and capacitor stability along with any rule violations.
+   Fitting rigs and implants are used to recover CPU or powergrid before a
+   module is downgraded; a CPU or powergrid implant is added when it costs
+   under 20% of the base fit, and a role-appropriate booster when a dose costs
+   under 10%.
 4. **Deliver with provenance.** The answer is the EFT block plus a one-line
    validation result, and for video-sourced fits the URL and timestamp of the
    description, comment or frame the fit came from.
