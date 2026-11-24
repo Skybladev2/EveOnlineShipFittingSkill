@@ -49,9 +49,11 @@ through `_calcMissileFactor` (`graphs/data/fitDamageStats/calc/application.py`,
   `effective DPS / paper DPS` equals the target's damage resonance to the
   second decimal, the application factor is 1.0 and the curve is a resist
   chart, not a tank result.
-- `apply projected` only projects the **attacker's** modules onto the target.
-  A guidance disruptor fitted on the defender is not applied to the attacker's
-  missiles there; pyfa handles that module only in Fit EWAR Stats. Either
+- `apply projected` projects the attacker's modules onto the target. Stock
+  builds before the target-projection fix do not apply a guidance disruptor
+  fitted on the defender to the attacker's missiles, and show that module only
+  in Fit EWAR Stats; builds carrying the fix apply the defender's guidance and
+  tracking disruptors in Damage Stats as well. When the build in use does not,
   recompute the attacker's explosion radius and velocity with the scripted
   disruptor bonus or drop the disruptor into the attacker-side fit.
 - Missile graphs are one-directional. Run the graph once per direction and
@@ -60,6 +62,71 @@ through `_calcMissileFactor` (`graphs/data/fitDamageStats/calc/application.py`,
 
 Set the target speed to the real webbed or unwebbed speed and enable projected
 effects before using an absolute line in a TTK.
+
+## Known damage type: resist first, then repair
+
+When the opponent's damage type is fixed by its loaded charge (Scourge Rage
+rockets are kinetic whatever the hull), the tank question becomes arithmetic
+and the strongest answer is usually a resist-stacked active repairer rather
+than a plate.
+
+1. Take the damage type from the charge, not the hull or the ship class.
+2. Stack resistance for that one type. An adaptive hardener settles toward the
+   incoming profile, while an energized membrane and a resistance rig multiply
+   on top. Read the settled resonance from `validate --profile <type>`; a
+   Reactive Armor Hardener quoted from its static stats is only 15%.
+3. Size the repairer against incoming damage **after** resists and missile or
+   turret application, not against paper DPS. A Small Armor Repairer II with
+   Repair Systems V and a Small Auxiliary Nano Pump I repairs roughly 23 HP/s.
+4. Keep the mid slots for orbit control (afterburner, web, scrambler) when the
+   target has to be held. A guidance disruptor is worth a mid slot only when
+   losing the web still leaves you able to dictate range.
+5. Put any spare rig slot into damage once the tank holds.
+6. Fall back to a plate and damage control when the repair cannot cover the
+   incoming damage, or when capacitor endurance is shorter than kill time.
+
+Worked Rifter example against a kinetic-locked Flycatcher at a 500 m orbit,
+with the Flycatcher's web applied and about 20 effective DPS after missile
+application and resists:
+
+| Design | Kinetic resist | Incoming | Sustain |
+|---|---|---|---|
+| RAH + kinetic membrane + SAR II + nano pump + kinetic rig | 89.2% | ~20 DPS | ~23 HP/s repair, capacitor-limited |
+| RAH + DCU + 200 mm plate + kinetic rig | 82.6% | ~22 DPS | 2.4k EHP buffer, no repair |
+
+The passive fit survives on buffer alone; the active fit holds armour while
+capacitor lasts, and `validate --profile kinetic` reports 6,777 EHP at
+151 DPS for the active layout. When kill time is shorter than capacitor
+endurance, the active repair is the stronger anti-X tank.
+
+The active layout that follows from those steps, validated with all skills at
+V and the kinetic profile:
+
+```text
+[Rifter, Anti Flycatcher]
+
+Reactive Armor Hardener
+Capacitor Power Relay II
+True Sansha Kinetic Energized Membrane
+Small Armor Repairer II
+
+1MN Monopropellant Enduring Afterburner
+X5 Enduring Stasis Webifier
+J5b Enduring Warp Scrambler
+
+200mm AutoCannon II, Republic Fleet EMP S
+200mm AutoCannon II, Republic Fleet EMP S
+200mm AutoCannon II, Republic Fleet EMP S
+
+Small Auxiliary Nano Pump I
+Small Kinetic Armor Reinforcer I
+Small Projectile Burst Aerator I
+```
+
+CPU 151.2/162.5, powergrid 31.6/51.2 MW, calibration 350/400, 6,777 EHP on
+the kinetic profile, 150.8 DPS. Upgrade the repair, membrane and rigs only
+while the validation still passes; the resistance rig and the repair-amount
+rig carry more value here than a second buffer module.
 
 ## Capacitor stability is optional
 

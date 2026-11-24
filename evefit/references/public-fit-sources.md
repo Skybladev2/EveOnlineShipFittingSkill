@@ -11,7 +11,7 @@ Use these sites as baselines. Browse is public on all of them; creating or publi
 | DaOpa's Fittings Database | https://gamingwithdaopa.ellatha.com/eveonline/fittings-database/ | PvE, missions, Abyss, mining; ~2,200 fits | EFT export, DPS/EHP/cost/skills listed |
 | Minmatar Fleet | https://my.minmatar.org/ships/fittings/ | Faction warfare, solo plex, nanogang, fleet | 248 doctrine fits; strongest for Minmatar FW |
 | Down the Chain | https://downthechain.net/fits/ | Lowsec and wormhole PvE | Each fit states cost, date, skills and sites cleared |
-| Abyss Tracker | https://abysstracker.com/fits | Abyssal Deadspace | Fits paired with run results and loot |
+| Abyss Tracker | https://abysstracker.com/fits | Abyssal Deadspace | Fits paired with run results; check runs, success rate and ISK/hour before copying |
 | EVE-Mining | https://eve-mining.com/fits | Mining, ice, gas, moon mining, hauling, scanning | Russian UI with partial English; role-specific |
 | EVE Frigates — Faction Warfare Yearbook | https://www.patreon.com/EVEFrigates | Detailed faction-warfare fits, rationale, matchups and tactics for frigates and destroyers | 2026 edition: https://www.patreon.com/EVEFrigates/posts/eve-online-2026-171374966 — strongest textual source for solo/small-gang FW; check for a newer edition |
 | iBeast (boosty.to) | https://boosty.to/ibeast | Recent fits, frequently screenshot-only | Posts are mostly fitting-window images with no free text; transcribe with vision and validate every item |
@@ -31,6 +31,27 @@ opponent, treat the libraries as a set of baselines: collect two or three
 current fits for the hull and role, keep the modules and choices that repeat
 across them, and treat the outliers as options. Do not average modules into a
 fit that no pilot flies; pick one baseline and adapt it.
+
+## Abyss Tracker performance
+
+Abyss Tracker's value is the run history attached to each fit, not just the EFT
+text. A fit that completes the requested Abyssal content repeatedly is stronger
+evidence than a fit that looks good on paper.
+
+1. Search https://abysstracker.com/fits by hull, role and Abyssal difficulty.
+2. Open the fit and read its performance statistics before copying it: number
+   of runs, success or survival rate, average run time, ISK/hour, loot value,
+   and the tier and weather those runs used.
+3. Prefer fits with many recent runs and proven efficiency at the requested
+   difficulty, such as the established Povertila fit, over a newly posted fit
+   with no results.
+4. Compare like with like. A T5 Exotic success rate does not establish a T6
+   Dark run, and old results may predate a balance change or a fit revision.
+5. Read the actual EFT and run `checknames` and `validate`. If the page shows no
+   run statistics, label the fit unproven and use it only as a baseline.
+
+State the performance evidence in the answer: runs, success rate, tier and
+weather, and ISK/hour when the site provides them.
 
 ## YouTube channels
 
