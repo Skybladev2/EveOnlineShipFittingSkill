@@ -76,7 +76,10 @@ kills.
 1. Resolve the hull's type ID from the SDE (`evefit.py ship "<Hull>"` or the
    types data), then open the ship page at
    `https://zkillboard.com/ship/<typeID>/`, or use the site search at
-   `https://zkillboard.com/search/`.
+   `https://zkillboard.com/search/`. For a bounded read-only sample, the recent
+   loss endpoint `https://zkillboard.com/api/shipID/<typeID>/losses/` returns
+   killmail IDs and hashes; fetch individual killmails from ESI for item lists.
+   Keep requests sparse.
 2. Narrow with the site's own filters: date range (last 90 days, or since the
    last balance patch), region or system matching where the user flies, and
    solo/fleet and ship-class filters where available.
@@ -85,13 +88,38 @@ kills.
    with many losses but a strong efficiency is flying aggressively and still
    winning most exchanges; a pilot with one lucky kill is not evidence.
 4. Open those pilots' losses of the requested ship and read the fitting. Collect
-   three to five losses, not one. Modules repeated across independent pilots
-   are the real baseline; a single unusual fit may be bait, an experiment or a
-   loss caused by a blob.
+   several losses, not one. Keep zkillboard's `solo` label separate from a true
+   one-attacker fight: fetch the ESI killmail and check the attacker count.
+   Count only fitted modules (low, mid, high and rig flags) and charges loaded
+   in weapon slots; cargo can carry spare ammo or modules that were not part of
+   the fit. Modules repeated across independent pilots are the real baseline;
+   a single unusual fit may be bait, an experiment or a loss caused by a blob.
 5. Exclude fittings from fights that do not match the user's scenario: a
    solo-fit ship killed by a 20-ship fleet says little about a solo matchup.
 6. Verify every extracted module with `checknames` and run `validate` before
    delivering. Killmail data is a historical record, not a current guarantee.
+7. If you describe a layout as common, typical, representative or dominant,
+   report the date window, the number of qualifying losses, and the number
+   using that exact fitted signature or the key modules. If no signature
+   repeats, say the sample is heterogeneous instead of choosing one loss and
+   presenting it as the meta.
+
+## Reporting killboard evidence
+
+A killmail is a loss record, not a win-rate sample. Make the evidence match the
+claim:
+
+- Say whether the target fit was supplied by the user or inferred from losses.
+  A user-supplied target is authoritative and should replace any inferred one.
+- Give the date window, hull, filter and sample size (`16 one-attacker solo
+  losses from 22–24 November`).
+- Count fitted modules and loaded weapon charges, not cargo. A spare damage
+  type in cargo does not make a fit that ammo type.
+- Report exact fit counts or key-module counts. "Seven launchers appeared in
+  3 of 16; six appeared in 10" is evidence. "This is the current solo fit"
+  from one killmail is not.
+- State what the sample cannot prove: lossmails do not show win rate, pilot
+  intent or whether the layout is used most often.
 
 If a page is blocked or the search UI will not load, use a normal web search
 such as `site:zkillboard.com <hull> <module>` to find the same kill page, and

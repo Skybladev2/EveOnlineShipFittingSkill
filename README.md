@@ -12,9 +12,10 @@ file the agent follows, and everything else is its references and tooling.
 
 1. **Find a baseline fit.** It looks for a public fit for the same hull and role
    first — fit libraries, PvP losses on zkillboard, and EVE YouTube content,
-   reading the video description and comments before extracting frames. Only
-   when nothing usable exists does it design from scratch (asking about
-   activity, space, and budget first).
+   reading the video description and comments before extracting frames. A
+   killboard sample is reported with its date window and counts; one loss is
+   never presented as the "most common" fit. Only when nothing usable exists
+   does it design from scratch (asking about activity, space, and budget first).
 2. **Use current numbers.** Module stats, slots, CPU/PG, calibration and skill
    requirements come from the official EVE Static Data Export (SDE), fetched
    table by table from the `sde.evetech.net` HTTP API and cached by release, so
@@ -22,11 +23,12 @@ file the agent follows, and everything else is its references and tooling.
 3. **Prove the fit flies.** It normalizes the EFT text, checks every item name
    against the SDE, then runs EVEShip.fit's `dogma-engine` to confirm CPU,
    powergrid, calibration, slots, drones and charges fit with all skills at V.
-   It reports EHP, DPS and capacitor stability along with any rule violations.
-   Fitting rigs and implants are used to recover CPU or powergrid before a
-   module is downgraded; a CPU or powergrid implant is added when it costs
-   under 20% of the base fit, and a role-appropriate booster when a dose costs
-   under 10%.
+   Every proposed or rejected weapon, tank and rig swap is validated as a
+   complete fit, including higher-DPS variants. It reports EHP, DPS and
+   capacitor stability along with any rule violations. Fitting rigs and
+   implants are used to recover CPU or powergrid before a module is downgraded;
+   a CPU or powergrid implant is added when it costs under 20% of the base fit,
+   and a role-appropriate booster when a dose costs under 10%.
 4. **Deliver with provenance.** The answer is the EFT block plus a one-line
    validation result, and for video-sourced fits the URL and timestamp of the
    description, comment or frame the fit came from.

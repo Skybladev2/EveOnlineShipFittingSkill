@@ -38,6 +38,27 @@ Common SDE attribute IDs for drafting:
 - Slots/hardpoints: weapon size and count are fixed by hardpoints; utility highs and launchers compete for the same high slots.
 - Drones: check bay volume, bandwidth and the number of launched drones separately; a full bay can still exceed bandwidth.
 
+## Validate swaps; do not estimate them
+
+A module swap is a property of the complete fit, not of the module in isolation.
+Skill bonuses, rig drawbacks, implant effects and rounding can make a candidate
+fit that a rough CPU or powergrid calculation rejects, or reject one that looks
+close enough. When considering a higher-DPS turret, launcher, hardener,
+propulsion module or rig:
+
+1. Put the swap into the complete EFT text.
+2. Run `checknames` and `validate` on that complete candidate.
+3. Record used/available CPU, powergrid and calibration, plus any violation.
+4. If the candidate is rejected, keep the exact binding constraint in the
+   comparison instead of saying it "looks too tight."
+5. If the chosen fit is legal but has very little headroom, report the exact
+   margin (for example 0.3 tf CPU free) and name a fallback for pilots who
+   change metas or use lower fitting skills.
+
+Do not stop at the first legal fit when a higher-DPS or cheaper variant also
+validates. The comparison should include that variant, even when another fit
+wins on tank, capacitor endurance or price.
+
 ## Design order
 
 1. Propulsion and tackle that the activity needs (AB/MWD, scram, web, point).

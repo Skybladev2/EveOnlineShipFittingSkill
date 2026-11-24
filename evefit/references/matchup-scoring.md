@@ -14,6 +14,53 @@ A matchup is decided by three clocks and a price, not by paper EHP or paper DPS.
 Win condition: `TTK < TTD` and `TTK < capacitor endurance`, with margin for
 piloting error. State the margin.
 
+## Keep raw HP and EHP in separate ledgers
+
+EHP is already divided by the target's damage resonance. Do not mix it with
+raw incoming damage or raw repair. Use one of these consistent methods:
+
+- **EHP method:** divide EHP by damage **after** tracking, missile application
+  and resists, and subtract repair after converting it to effective HP for the
+  tank layer.
+- **Raw-HP method:** apply the target's raw damage after application to each
+  layer using that layer's resonance, subtract raw repair from raw armor HP,
+  and calculate when shield, armor and structure are exhausted.
+
+For a single armor layer, the raw-HP form is:
+
+```text
+armor seconds = raw armor HP / (raw incoming DPS * armor resonance - raw repair HP/s)
+```
+
+A repairer that looks small next to paper DPS can exceed the raw armor damage
+after high resists and hold a layer indefinitely. Conversely, subtracting raw
+repair from raw incoming and then dividing EHP overstates or understates the
+tank depending on the resist profile. Never use `EHP / (raw incoming - raw
+repair)` for a resisted, repaired fit.
+
+Third-party graphs need the same check. Pyfa's Damage Stats code does apply
+target speed, signature radius, explosion radius, explosion velocity and DRF
+through `_calcMissileFactor` (`graphs/data/fitDamageStats/calc/application.py`,
+`getLauncherMult` and `_calcMissileFactor`). Three traps follow from that code:
+
+- The application term uses the graph's target-speed input, not the target
+  fit's maximum speed automatically. A plot left at a stationary target shows
+  post-resist DPS with no velocity penalty. Detect it arithmetically: if
+  `effective DPS / paper DPS` equals the target's damage resonance to the
+  second decimal, the application factor is 1.0 and the curve is a resist
+  chart, not a tank result.
+- `apply projected` only projects the **attacker's** modules onto the target.
+  A guidance disruptor fitted on the defender is not applied to the attacker's
+  missiles there; pyfa handles that module only in Fit EWAR Stats. Either
+  recompute the attacker's explosion radius and velocity with the scripted
+  disruptor bonus or drop the disruptor into the attacker-side fit.
+- Missile graphs are one-directional. Run the graph once per direction and
+  combine the two results; do not read the defender's incoming DPS off the
+  attacker's curve and assume both sides' projected effects are included.
+
+Set the target speed to the real webbed or unwebbed speed and enable projected
+effects before using an absolute line in a TTK.
+
 ## Capacitor stability is optional
 
 Cap-stable is convenient, not required. A fit that runs dry in 250 seconds is
