@@ -13,6 +13,8 @@ Use these sites as baselines. Browse is public on all of them; creating or publi
 | Down the Chain | https://downthechain.net/fits/ | Lowsec and wormhole PvE | Each fit states cost, date, skills and sites cleared |
 | Abyss Tracker | https://abysstracker.com/fits | Abyssal Deadspace | Fits paired with run results and loot |
 | EVE-Mining | https://eve-mining.com/fits | Mining, ice, gas, moon mining, hauling, scanning | Russian UI with partial English; role-specific |
+| EVE Frigates — Faction Warfare Yearbook | https://www.patreon.com/EVEFrigates | Detailed faction-warfare fits, rationale, matchups and tactics for frigates and destroyers | 2026 edition: https://www.patreon.com/EVEFrigates/posts/eve-online-2026-171374966 — strongest textual source for solo/small-gang FW; check for a newer edition |
+| iBeast (boosty.to) | https://boosty.to/ibeast | Recent fits, frequently screenshot-only | Posts are mostly fitting-window images with no free text; transcribe with vision and validate every item |
 | zkillboard | https://zkillboard.com | PvP fittings recorded on killmails | Bot-protected; use search and character pages, never crawl the kill feed |
 
 ## How to use a baseline
@@ -24,11 +26,46 @@ Use these sites as baselines. Browse is public on all of them; creating or publi
 
 Fit editors such as https://eveship.fit, https://www.eve-webtools.com/Fitlab/ and https://evefit.online can render a shared fit but are not browsable libraries, so use them only to inspect a specific link.
 
+Since most requests are for general-purpose fits rather than one known
+opponent, treat the libraries as a set of baselines: collect two or three
+current fits for the hull and role, keep the modules and choices that repeat
+across them, and treat the outliers as options. Do not average modules into a
+fit that no pilot flies; pick one baseline and adapt it.
+
 ## YouTube channels
 
 EVE YouTubers publish fits in video descriptions, pinned comments and comment threads, and frequently show the fitting window on screen. Use them after the sites above, or when the user points at a specific video. Video content is a proposal from a player, not a data source, so every extracted fit still goes through `checknames` and `validate`.
 
 Useful channels for fitting content include Suitonia, Bjorn Bee, Chessur and Delonewolf; search for `<hull> <activity> fit` to find current videos for a specific hull. Rules for extracting a fit from a description, a comment or a frame, including timestamps and the image budget, are in [youtube-fits.md](youtube-fits.md).
+
+## Screenshot-only fits (iBeast and similar)
+
+Some active publishers post fits only as fitting-window screenshots. Treat a
+screenshot as a valid baseline, but transcribe it carefully and prove the
+result before delivering.
+
+1. Open the post at https://boosty.to/ibeast and note the post URL, publication
+   date and the image position within the gallery.
+2. Read the fitting window in slot order: hull and fit name first, then low,
+   mid, high, rigs, drones, cargo, implants and boosters. Fitting windows show
+   slots in that order.
+3. Capture each module's exact name, including meta level and faction prefix,
+   and any charge loaded on the same row (`Small Ancillary Armor Repairer,
+   Nanite Repair Paste`). Record quantities for drones (`xN`) and cargo.
+4. Treat a visible orbit or keep-at-range value as pilot intent, not as the
+   real orbit; convert it with the propulsion offset in
+   [matchup-scoring.md](matchup-scoring.md).
+5. Run `checknames` on the transcript. If a name no longer exists after a
+   balance patch, find the current equivalent with `search` and record the
+   substitution.
+6. Run `validate` at all V. A screenshot can show a fit that no longer fits
+   after a patch, so fix CPU, powergrid or calibration before delivery.
+7. Cite the post URL and image position (and date) in the answer.
+
+Image budget: inspect one image or one contact sheet at a time, and keep the
+whole conversation under the provider limit of 16 images. If a gallery is
+large, transcribe the single fitting window that matters and note the others
+as unread rather than attaching all of them.
 
 ## zkillboard for PvP fits
 

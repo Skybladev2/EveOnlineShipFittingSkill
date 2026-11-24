@@ -920,6 +920,94 @@ def charge_warnings(text: str) -> list[str]:
     return warnings
 
 
+
+def _hit_chance(orbit: float, speed: float, tracking: float, sig_res: float,
+                target_sig: float, optimal: float, falloff: float) -> float:
+    """Turret hit chance for an orbiting attacker at the given real range."""
+    angular = speed / orbit if orbit > 0 else 0.0
+    effective_tracking = tracking * (target_sig / sig_res)
+    term = (angular / effective_tracking) ** 2 if effective_tracking > 0 else 0.0
+    if orbit > optimal:
+        term += ((orbit - optimal) / falloff) ** 2 if falloff > 0 else 0.0
+    return 0.5 ** term
+
+
+def _fit_gun_stats(path: str) -> dict:
+    """All-V turret, range, speed and DPS figures for one EFT file."""
+    ensure_engine()
+    import esf_dogma_engine as dogma
+    from eveshipfit_sde import sde_path
+
+    text = sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
+    dogma.load_sde_from_file(str(sde_path()))
+    skills = load_skills()
+    fit = dogma.post_load({**dogma.load_eft(text),
+                           "character": {"skills": {sid: 5 for sid in skills}}})
+    calc = dogma.calculate(fit, {"validate": True})
+
+    def g(attrs, ident):
+        entry = attrs.get(ident) or attrs.get(str(ident))
+        return entry.get("value") if entry else None
+
+    ship = calc["ship"]["attributes"]
+    guns = [it for it in calc["items"] if g(it.get("attributes", {}), 160)]
+    if not guns:
+        sys.exit("hit: fit has no turret with tracking")
+    attrs = guns[0]["attributes"]
+    # trackingSpeed (160) is stored in milliradians per second.
+    return {
+        "tracking": g(attrs, 160) / 1000.0,
+        "sigres": (g(attrs, 620) or 40000.0) / 1000.0,
+        "optimal": g(attrs, 54),
+        "falloff": g(attrs, 158),
+        "speed": g(ship, 37),
+        "dps": g(ship, -12),
+    }
+
+
+def cmd_hit(args) -> None:
+    stats = {}
+    if args.fit:
+        stats = _fit_gun_stats(args.fit)
+        print(f"fit: tracking {stats['tracking']:.4f} rad/s | sig res {stats['sigres']:g} m | "
+              f"optimal {stats['optimal']:g} m | falloff {stats['falloff']:g} m | "
+              f"speed {stats['speed']:g} m/s | dps {stats['dps']:.1f}")
+    tracking = args.tracking if args.tracking is not None else stats.get("tracking")
+    sig_res = args.sigres if args.sigres is not None else stats.get("sigres", 40.0)
+    optimal = args.optimal if args.optimal is not None else stats.get("optimal")
+    falloff = args.falloff if args.falloff is not None else stats.get("falloff")
+    speed = args.speed if args.speed is not None else stats.get("speed")
+    dps = args.dps if args.dps else stats.get("dps", 0.0)
+    missing = [name for name, value in (("tracking", tracking), ("optimal", optimal),
+                                        ("falloff", falloff), ("speed", speed))
+               if value is None]
+    if missing:
+        sys.exit("hit: missing " + ", ".join("--" + m for m in missing) + " (or pass --fit)")
+    offset = args.offset
+    if offset is None:
+        offset = {"ab": 1000.0, "mwd": 3000.0}.get(args.prop, 0.0)
+    if offset:
+        print(f"real orbit = configured + {offset:.0f} m ({args.prop or 'offset'})")
+    if args.sweep:
+        start, end, step = (float(x) for x in args.sweep.split(":"))
+        rows = []
+        cursor = start
+        while cursor <= end + 1e-9:
+            rows.append((cursor, cursor + offset))
+            cursor += step
+    else:
+        rows = [(args.orbit, args.orbit + offset)]
+    print(f"tracking {tracking:g} rad/s | sig res {sig_res:g} m | target sig {args.target_sig:g} m")
+    print(f"optimal {optimal:g} m | falloff {falloff:g} m | speed {speed:g} m/s")
+    print(f"{'configured':>10} {'real':>7} {'hit':>5} {'applied dps':>12} {'ttk':>7}")
+    for configured, real in rows:
+        hit = _hit_chance(real, speed, tracking, sig_res, args.target_sig,
+                          optimal, falloff)
+        applied = dps * hit
+        ttk = f"{args.target_ehp / applied:,.0f}s" if args.target_ehp and applied > 0 else "-"
+        print(f"{configured:10.0f} {real:7.0f} {hit:5.2f} {applied:12.1f} {ttk:>7}")
+
+
 def cmd_validate(args) -> None:
     ensure_engine()
     import esf_dogma_engine as dogma
@@ -949,6 +1037,14 @@ def cmd_validate(args) -> None:
             if near:
                 hint = "\n  did you mean: " + "; ".join(near)
         sys.exit(f"cannot parse EFT: {msg}{hint}")
+    if args.profile:
+        fit = {
+            **fit,
+            "environment": {
+                "damage_profile": {args.profile: 1.0},
+                "reactive_armor": "damage_profile",
+            },
+        }
     fit = dogma.post_load({**fit, "character": {"skills": {sid: 5 for sid in skills}}})
     calc = dogma.calculate(fit, {"validate": True})
 
@@ -990,6 +1086,7 @@ def cmd_validate(args) -> None:
             "sde_build": build,
             "ship": fit.get("ship", {}),
             "stats": stats,
+            "profile": args.profile,
             "violations": violations,
             "warnings": charge_warnings(text),
             "eft": dogma.save_eft(fit),
@@ -999,6 +1096,8 @@ def cmd_validate(args) -> None:
     ship_name = _item_name(index, fit.get("ship", {}).get("type_id"))
     print(f"ship: {ship_name}")
     print(f"sde build: {build} | skills: all 5 ({len(skills)} skills)")
+    if args.profile:
+        print(f"damage profile: {args.profile} only (Reactive Armor Hardener adapted)")
     print(
         f"cpu {stats['cpu']:g}/{stats['cpu_out']:g} tf | "
         f"powergrid {stats['powergrid']:g}/{stats['powergrid_out']:g} MW | "
@@ -1286,6 +1385,22 @@ def main() -> None:
     p_val.add_argument("file", help="EFT file, or - for stdin")
     p_val.add_argument("--json", action="store_true")
     p_val.add_argument("--eft-only", action="store_true", help="print only the EFT block")
+    p_val.add_argument("--profile", choices=["em", "thermal", "kinetic", "explosive"], help="score EHP against a single damage type; adapts a Reactive Armor Hardener")
+    p_hit = sub.add_parser("hit", help="turret hit chance and applied DPS by orbit radius")
+    p_hit.add_argument("--fit", help="EFT file (or -) to read all-V tracking, range, speed and DPS from")
+    p_hit.add_argument("--tracking", type=float, help="turret tracking in rad/s; overrides --fit")
+    p_hit.add_argument("--sigres", type=float, help="turret signature resolution in m; overrides --fit")
+    p_hit.add_argument("--target-sig", type=float, required=True, help="target signature radius in m")
+    p_hit.add_argument("--optimal", type=float, help="optimal range in m after ammo and skills; overrides --fit")
+    p_hit.add_argument("--falloff", type=float, help="falloff in m after skills; overrides --fit")
+    p_hit.add_argument("--speed", type=float, help="orbiting ship all-V max velocity in m/s; overrides --fit")
+    p_hit.add_argument("--dps", type=float, default=0.0, help="paper DPS to apply the hit chance to")
+    p_hit.add_argument("--target-ehp", type=float, default=0.0, help="target effective HP, for TTK")
+    p_hit.add_argument("--orbit", type=float, default=0.0, help="single real orbit radius in m")
+    p_hit.add_argument("--sweep", help="START:END:STEP real orbit radii, e.g. 500:3500:500")
+    p_hit.add_argument("--offset", type=float, default=None, help="real orbit minus configured orbit")
+    p_hit.add_argument("--prop", choices=["ab", "mwd"], help="frigate default offset: ab=+1000 m, mwd=+3000 m")
+    p_hit.set_defaults(func=cmd_hit)
     p_val.set_defaults(func=cmd_validate)
 
     p_names = sub.add_parser("checknames", help="check EFT item names against the SDE")

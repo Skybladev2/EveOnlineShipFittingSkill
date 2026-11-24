@@ -89,3 +89,5 @@ treat that as a losing condition even when the raw numbers look good.
 Do not present "DPS > EHP, therefore win" as a conclusion. Give the
 conditions under which each ship wins, and say what the user must do in the
 fight to reach those conditions.
+
+For the scoring procedure (TTK versus TTD, capacitor endurance, adaptive hardeners, orbit sweep and repair types), see [matchup-scoring.md](matchup-scoring.md).
