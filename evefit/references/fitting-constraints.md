@@ -95,6 +95,64 @@ single absolute threshold, and do not judge a change by one number alone:
 Record both deltas in the comparison, together with the fitting margins, so
 the reader can see why the trade was accepted or rejected.
 
+## Remove redundant support modules
+
+Audit in both directions. Besides upgrading fitting-driven downgrades, remove
+modules that only add margin to a condition already satisfied.
+
+1. Identify support modules that do not change a pass/fail check: a cap rig or
+   CPR when the fit is stable without it, a resist module against a damage
+   type that is not incoming, or a plate on a fit that never gets hit.
+2. Remove the module and validate the complete fit. If the remaining margin
+   still covers the expected fight, the module was redundant.
+3. Test what the freed slot buys in the metric that decides the fight: damage,
+   resist, speed or application. Validate that candidate too.
+4. Keep the support module only when its absence changes the outcome, not when
+   it merely makes an already acceptable number look nicer.
+
+Worked example: a Rifter with afterburner, scrambler and range-scripted TD was
+82.6% cap stable without Small Capacitor Control Circuit I and 85.4% with it.
+The kill took 67-95 s in both cases, so cap never bound. Replacing the CCC with
+Small Projectile Burst Aerator II kept cap stable and raised DPS from 127.6 to
+135.1 (+5.9%) with the same tank and speed. The cap rig was over-insurance.
+
+## Compare complete rig sets
+
+Rig slots are a set, not three independent upgrades. A T2 damage rig can use
+the calibration that would otherwise fit two useful rigs. Distinct bonuses are
+a useful default, not a requirement: when one stat is the win condition,
+stacking the same bonus can be correct even after the stacking penalty.
+
+Worked Rifter example:
+
+- Burst Aerator II + Polycarbon I: 400 calibration, two rigs, 135.1 DPS,
+  3,504 EHP vs Void/Null, 1,520 m/s.
+- Burst Aerator I + Polycarbon I + Kinetic Armor Reinforcer I: 350
+  calibration, three rigs, 127.6 DPS, 3,790 EHP vs Void/Null, 1,520 m/s.
+- Burst Aerator I + Polycarbon I + Kinetic Armor Reinforcer II: 375
+  calibration, three rigs, 127.6 DPS, 3,849 EHP. The T2 rig costs about 5.0M
+  against 380k for the T1 version (13x) and adds only 59 EHP (1.5%), so it is
+  rejected on a 6.6M Rifter.
+- Burst Aerator I + Kinetic II + Thermal II: 350 calibration, three rigs,
+  127.6 DPS, 4,431 EHP, 1,474 m/s (no Polycarbon; both T2 rigs are expensive).
+- Burst Aerator I + Polycarbon I + Ancillary Current Router I: 400
+  calibration, 5.2 MW powergrid headroom, no combat bonus.
+
+The first and third sets trade 7.5 DPS (-5.5%) for 286 EHP (+8.2%) at
+identical speed and cap, for one cheap T1 rig. Use the three-rig set when the
+empty slot would otherwise be wasted and the extra tank covers the actual
+damage profile. Use the two-rig set when damage is the binding clock. Do not
+fill a slot with a redundant cap rig just to avoid an empty slot, and do not
+pay 13x for a T2 rig that adds 1.5% EHP on a cheap hull.
+
+The same-bonus option is legitimate. If the target's tank is the binding
+clock, a second damage rig that adds only 4% after stacking can still beat a
+resist rig that adds no TTK reduction. If survival against an alpha strike is
+the binding clock, stack HP or the relevant resist even at a penalty. Compare
+the next same-bonus rig after its stacking penalty with the best different-bonus
+rig, and record which constraint decided the choice. A full rack is not a goal
+by itself, and an empty slot is not a failure.
+
 ## Validate swaps; do not estimate them
 
 A module swap is a property of the complete fit, not of the module in isolation.

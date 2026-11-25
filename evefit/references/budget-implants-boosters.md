@@ -21,6 +21,24 @@ Useful sources are the in-game market, Fuzzwork market aggregates
 Janice and EVE Tycoon. Quote the date and hub next to the price, because the
 thresholds move with the market.
 
+## Module price sensitivity
+
+Module upgrades follow the same absolute-and-relative logic as implants, but
+without a fixed cap. For every candidate, record:
+
+- the absolute ISK delta (new minus old);
+- the price ratio (new divided by old);
+- the new module's share of the base fit price.
+
+A T2 rig at 5.0M ISK replacing a 380k T1 rig is 13x the price and about 76% of
+a 6.6M Rifter; it added 59 EHP (1.5%). Keep the T1 rig. On a 500M doctrine
+hull the same 5M module is 1% of the fit and may be a trivial upgrade.
+
+As a rule of thumb, treat a single module above roughly 20-25% of the base fit
+as a major purchase. Require either a pass/fail change or a clearly large
+relative gain in the metric that decides the fight. Otherwise keep the cheaper
+module and state both the saved ISK and the performance given up.
+
 ## CPU and powergrid implants
 
 | Need | Implant family | Slots |
