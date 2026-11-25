@@ -202,17 +202,26 @@ close to its own speed; the target's motion adds or subtracts.
 Use the real orbit radius, not the configured one. A pilot requests an orbit
 and the ship settles wider; the gap depends on hull and propulsion mode:
 
-| Hull | Propulsion | Real orbit offset |
+| Hull | Propulsion | Real orbit offset (unwebbed) |
 |---|---|---|
 | T1 and navy frigates | 1MN afterburner | about +1000 m |
 | T1 and navy frigates | 5MN microwarpdrive | about +3000 m |
 | Other hulls | any | smaller, exact figure unknown |
 
-Those frigate figures are the working numbers to use. For other hulls, do not
-invent an offset: run the sweep across a plausible band and report the result
-as sensitive to the offset, or ask the user if the answer changes at the band
-edges. `hit --prop ab` and `hit --prop mwd` apply the frigate figures; `--offset`
-overrides them with a user-supplied number.
+Those frigate figures assume no webs and full prop speed. Under one or more
+webs, effective speed falls and the orbit settles closer to the configured
+radius; the real distance becomes a maneuver contest between both ships. For a
+Rifter under two -55% webs, speed is about 327 m/s against a scrammed Hecate's
+225 m/s, so a configured 8.5 km keep-at-range is a realistic intent; a
+configured 7.5 km is not 8.5 km in reality. Set the distance you actually need,
+then simulate a band around it.
+
+For unwebbed ships, `hit --prop ab` and `hit --prop mwd` apply the frigate
+figures; `--offset` overrides them. When webs are present, use `--offset 0` or
+a small sensitivity band and report the web stack and relative speeds. For
+other hulls, do not invent an offset: run the sweep across a plausible band
+and report the result as sensitive to the offset, or ask the user if the answer
+changes at the band edges.
 
 Take the gun and ship numbers from the fit itself (`hit --fit fit.eft`): the
 engine gives all-V tracking, optimal range with the loaded ammo, falloff, max
@@ -238,6 +247,23 @@ Procedure:
 Wider is not always better: angular velocity falls with range, but once the
 range term in the falloff grows the hit chance falls again. The optimum is
 usually inside optimal + one falloff.
+
+## Orbit versus keep-at-range
+
+Orbiting is not always the best motion. Angular velocity is zero when both
+ships hold range radially, so the tracking term disappears. That helps a
+low-tracking weapon such as artillery: at 8.5 km a Rifter's 280mm guns went
+from 121.3 to 127.2 applied DPS when the transversal dropped to zero, cutting
+TTK against a defense-mode Hecate from 97 s to 93 s. It does not rescue the
+same fit at close range: at 1.5 km a Hecate's Void blasters rose from 540 to
+637 DPS when the Rifter stopped moving, because the Rifter lost its angular
+mitigation.
+
+Run both modes at each range band. Use `hit --speed <transversal>` for orbit
+and `--speed 0` for radial keep-at-range, then report where the better motion
+changes. Keep-at-range means actively holding distance along the line, not
+sitting still while the opponent closes; if the range collapses, orbit may be
+the better defensive choice even for a low-tracking weapon.
 
 ## Repair: burst versus sustained
 

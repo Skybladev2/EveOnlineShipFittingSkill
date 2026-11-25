@@ -34,7 +34,9 @@ application depends on geometry:
   application; afterburners, MWD signature bloom and halo implants worsen it.
 - **Speed and tackle.** Who controls range? A scram shuts off a microwarpdrive
   and holds a brawler; a long point lets a faster ship disengage. Consider
-  overheat, prop module cycles and capacitor for the prop mod.
+  overheat, prop module cycles and capacitor for the prop mod. Orbit offsets
+  are quoted for unwebbed ships; under webs the real distance is set by both
+  pilots' maneuvers and relative speed, not by a fixed offset.
 - **Signature.** Small signature and high speed are a tank of their own.
   Compare weapon signature resolution with the target's signature radius, and
   remember shield extenders and MWDs increase it.

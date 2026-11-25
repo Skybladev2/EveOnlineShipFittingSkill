@@ -987,7 +987,7 @@ def cmd_hit(args) -> None:
     if offset is None:
         offset = {"ab": 1000.0, "mwd": 3000.0}.get(args.prop, 0.0)
     if offset:
-        print(f"real orbit = configured + {offset:.0f} m ({args.prop or 'offset'})")
+        print(f"real orbit = configured + {offset:.0f} m ({args.prop or 'offset'}; unwebbed figure)")
     if args.sweep:
         start, end, step = (float(x) for x in args.sweep.split(":"))
         rows = []
@@ -1398,8 +1398,8 @@ def main() -> None:
     p_hit.add_argument("--target-ehp", type=float, default=0.0, help="target effective HP, for TTK")
     p_hit.add_argument("--orbit", type=float, default=0.0, help="single real orbit radius in m")
     p_hit.add_argument("--sweep", help="START:END:STEP real orbit radii, e.g. 500:3500:500")
-    p_hit.add_argument("--offset", type=float, default=None, help="real orbit minus configured orbit")
-    p_hit.add_argument("--prop", choices=["ab", "mwd"], help="frigate default offset: ab=+1000 m, mwd=+3000 m")
+    p_hit.add_argument("--offset", type=float, default=None, help="real orbit minus configured orbit; use 0 for a webbed ship or keep-at-range")
+    p_hit.add_argument("--prop", choices=["ab", "mwd"], help="unwebbed frigate offset: ab=+1000 m, mwd=+3000 m; do not use under webs")
     p_hit.set_defaults(func=cmd_hit)
     p_val.set_defaults(func=cmd_validate)
 
