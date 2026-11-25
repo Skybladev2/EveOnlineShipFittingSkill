@@ -38,6 +38,63 @@ Common SDE attribute IDs for drafting:
 - Slots/hardpoints: weapon size and count are fixed by hardpoints; utility highs and launchers compete for the same high slots.
 - Drones: check bay volume, bandwidth and the number of launched drones separately; a full bay can still exceed bandwidth.
 
+## Re-audit downgrades when headroom changes
+
+A fitting downgrade is provisional. After any change that frees CPU, powergrid,
+calibration, a slot or a hardpoint, revisit every module that was fitted only
+to make the fit legal. Test the higher-meta/T2 or larger alternative in the
+complete fit; do not assume it still fails because it failed in an earlier
+draft.
+
+1. Keep a list of modules with `Compact`, `Enduring`, `Restrained`, `Scoped`,
+   meta 0/1, or a smaller size than the slot allows.
+2. Compare the next meta/T2 version with `attrs`, including CPU, powergrid,
+   calibration, speed, cap use and the actual combat stat that matters.
+3. Put the candidate into the full EFT, then run `checknames` and `validate`.
+4. Adopt it if it fits and improves the fit's job; otherwise record the exact
+   binding constraint.
+5. Recheck speed, range control, capacitor and EHP after each adopted change.
+
+Worked example: an early Rifter draft used a 1MN Y-S8 Compact Afterburner
+because CPU was tight. It was the right choice against 1MN Afterburner I:
+13 vs 15 CPU, 9 vs 10 powergrid, and 125% vs 115% speed. Later swaps freed
+2 tf CPU and 2 MW, and 1MN Afterburner II then fit, adding about 70 m/s for
+0.3% less cap stability. The lesson is not "always use T2"; it is "re-run the
+comparison after the constraints change." Check the reverse too: a higher meta
+with worse cap use or fitting cost can be a downgrade for the actual plan.
+
+Armor plates need the same audit. The 100mm Rolled Tungsten Compact and
+100mm Crystalline Carbonide Restrained plates both give 250 armor; Restrained
+is 2.5 t lighter for +2 tf CPU and +1 MW PG. Steel Plates II gives 300 armor
+for +4 tf and +2 MW, and 2.5 t more mass. On this Rifter that is +100 EHP
+(+2.9%) for -1 m/s (-0.28% of the ~357 m/s base, -0.07% of the 1,522 m/s
+afterburner speed). Steel II is the better trade when the last 2 MW are not
+needed elsewhere; record the zero powergrid headroom. The point is to compare
+both absolute and relative deltas, not to reject a plate because a secondary
+number moves slightly.
+
+## Compare absolute and relative deltas
+
+Every swap has two deltas:
+
+- **Absolute:** new minus old, in the metric's own units.
+- **Relative:** (new - old) / old x 100%, against the baseline that matters.
+
+For speed, state which baseline you are using: hull base speed, afterburner
+speed or webbed speed. The same -1 m/s is 0.28% of 357 m/s, but only 0.07% of
+1,522 m/s. For EHP, use EHP against the actual damage profile, not a generic
+omni number if the opponent's ammo is known.
+
+Adopt a swap when the relative gain in the metric that decides the fight is
+larger than the relative loss in the secondary metric, and the fit remains
+legal with acceptable CPU, powergrid and calibration headroom. Do not use a
+single absolute threshold, and do not judge a change by one number alone:
+100 EHP is 2.9% of 3,404 EHP but 0.1% of 100,000 EHP; 10 m/s is 5% of
+200 m/s but 0.2% of 5,000 m/s.
+
+Record both deltas in the comparison, together with the fitting margins, so
+the reader can see why the trade was accepted or rejected.
+
 ## Validate swaps; do not estimate them
 
 A module swap is a property of the complete fit, not of the module in isolation.
@@ -54,6 +111,9 @@ propulsion module or rig:
 5. If the chosen fit is legal but has very little headroom, report the exact
    margin (for example 0.3 tf CPU free) and name a fallback for pilots who
    change metas or use lower fitting skills.
+6. Whenever a swap frees resources, repeat this check for every earlier
+   downgrade. A module that was necessary in the previous draft may no longer
+   be necessary in this one.
 
 Do not stop at the first legal fit when a higher-DPS or cheaper variant also
 validates. The comparison should include that variant, even when another fit
