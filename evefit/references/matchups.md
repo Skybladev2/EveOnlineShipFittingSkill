@@ -74,14 +74,15 @@ treat that as a losing condition even when the raw numbers look good.
 ## Method
 
 1. Build both fits and run `validate` so the comparison starts from legal fits.
-2. Read base DPS, EHP and capacitor from the validation output.
+2. Read base DPS and EHP from the validation output; read capacitor only to check whether cap-fed tackle, propulsion, disruption or repair lasts the expected fight.
 3. Adjust damage for range, tracking and the defender's resists. Adjust the
    defender's effective tank for capacitor pressure, reps and projected
    effects.
 4. Evaluate at two or three range bands and at the transversal values that are
    realistic for the matchup. Note where the advantage changes hands.
-5. Report the deciding factors: range control, application, cap pressure,
-   tackle, or a specific projected effect. Name the assumptions.
+5. Report the deciding factors: range control, application, tackle, tank or a
+   specific projected effect. Mention cap pressure only when it is the deciding
+   factor. Name the assumptions.
 6. Check recent zkillboard kills of similar fits as a sanity check on what
    actually kills them. Killmails are evidence of outcomes, not proof of a
    theoretical result.
@@ -90,4 +91,4 @@ Do not present "DPS > EHP, therefore win" as a conclusion. Give the
 conditions under which each ship wins, and say what the user must do in the
 fight to reach those conditions.
 
-For the scoring procedure (TTK versus TTD, capacitor endurance, adaptive hardeners, orbit sweep and repair types), see [matchup-scoring.md](matchup-scoring.md).
+For the scoring procedure (TTK versus TTD, cap endurance as a constraint, adaptive hardeners, orbit sweep and repair types), see [matchup-scoring.md](matchup-scoring.md).

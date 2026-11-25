@@ -1,18 +1,28 @@
 # Scoring a matchup
 
-A matchup is decided by three clocks and a price, not by paper EHP or paper DPS.
+A matchup is decided by two clocks and a price, not by paper EHP or paper DPS.
+Capacitor is a constraint, not a third clock.
 
 1. **Time to kill (TTK).** Effective HP of the target under the damage types you
    actually apply, divided by your applied DPS at the real range and transversal.
 2. **Time to die (TTD).** Your effective HP under the target's actual damage,
    including any repair that runs, divided by its applied DPS.
-3. **Capacitor endurance.** Seconds until your capacitor empties with every
-   active module running. When it empties, every cap-fed module stops at once:
-   hardener, repairer, scram, web, prop. Compare it with TTK and TTD.
+3. **Capacitor endurance (constraint).** Seconds until your capacitor empties
+   with every active module running. When it empties, every cap-fed module stops
+   at once: hardener, repairer, scram, web, prop. Compare it with TTK only when
+   losing cap would change the result. In ordinary solo PvP, a fit that runs dry
+   after the target is dead is fine.
 4. **Price.** Compare performance per ISK, not absolute performance.
 
-Win condition: `TTK < TTD` and `TTK < capacitor endurance`, with margin for
-piloting error. State the margin.
+Win condition: `TTK < TTD`, with margin for piloting error. Capacitor endurance
+must cover TTK only when cap loss would shut off tackle, propulsion, a tracking
+disruptor or a cap-fed tank before the kill. Otherwise treat cap as a
+convenience, not a requirement.
+
+Cap stability matters materially in sustained PvE where the site lasts longer
+than the buffer, and on a solo logistics ship where you are the rep. Outside
+those roles it matters only when enemy neuts or nosferatu make cap the deciding
+factor. It is not a goal in a short solo PvP brawl that ends before the cap does.
 
 ## Keep raw HP and EHP in separate ledgers
 
@@ -128,12 +138,32 @@ the kinetic profile, 150.8 DPS. Upgrade the repair, membrane and rigs only
 while the validation still passes; the resistance rig and the repair-amount
 rig carry more value here than a second buffer module.
 
-## Capacitor stability is optional
+## Capacitor is an endurance check, not a design target
 
 Cap-stable is convenient, not required. A fit that runs dry in 250 seconds is
-fine if it kills in 100. Report the endurance seconds and what shuts off, and
-prefer a fit whose endurance covers the worst-case TTK (for example against a
-tankier variant of the target).
+fine if it kills in 100. What matters is whether cap lasts the expected kill,
+and which modules stop if it does not. Report that as a pass/fail check, not as
+a score to maximize.
+
+Start from natural recharge and the modules the fit actually needs. If the fit
+is already stable, do not add a Capacitor Power Relay, Capacitor Control
+Circuit, cap battery or cap implant just to raise the percentage. The slot or
+rig has an opportunity cost in speed, tank, damage or range control; validate
+the alternative and compare the actual win condition.
+
+Add cap hardware only when one of these binds:
+
+- the expected fight, including a tankier target variant, outlasts cap endurance;
+- losing cap shuts off tackle, propulsion, a tracking disruptor or a cap-fed
+  repair before the kill;
+- an enemy neutralizer makes cap the deciding constraint.
+
+As a concrete example, a Rifter with an afterburner, scrambler, tracking
+disruptor and one Small Capacitor Control Circuit I can already sit around 85%
+stable. Adding a Capacitor Power Relay II moves that to roughly 89% and costs a
+low slot that could instead be a second Overdrive for range control. Unless a
+neut or a long fight makes the last few percent decisive, the Overdrive is the
+better module.
 
 `validate` prints the stable percentage; an unstable fit prints no cap line.
 The engine also exposes `capacitorDepletesIn` (negative when stable), which is
@@ -264,7 +294,9 @@ does 0.4215 rad/s tracking, 750 m optimal, 9,675 m falloff and 1,139 m/s, so the
 second kill. Pushing the contact orbit to 2,500 m (real 3,500 m) lifts hit
 chance to 0.85 and the kill comes in near 102 seconds, against 247 seconds of
 capacitor. A 500 m orbit is the worst case: 153 seconds, still inside the
-capacitor but with much less margin. Base SDE tracking and optimal without
+capacitor but with much less margin. The CPR is justified here because the SAR
+is the tank; on a passive-buffer fit the same slot would usually buy more as
+speed, damage or resistance. Base SDE tracking and optimal without
 skills had predicted far worse application, which is why the sweep now reads
 the calculated fit.
 

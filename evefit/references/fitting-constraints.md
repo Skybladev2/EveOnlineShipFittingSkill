@@ -57,7 +57,7 @@ propulsion module or rig:
 
 Do not stop at the first legal fit when a higher-DPS or cheaper variant also
 validates. The comparison should include that variant, even when another fit
-wins on tank, capacitor endurance or price.
+wins on tank, range control or price; add a capacitor variant only when cap endurance binds.
 
 ## Design order
 
