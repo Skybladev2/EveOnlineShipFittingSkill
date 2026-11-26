@@ -15,7 +15,11 @@ file the agent follows, and everything else is its references and tooling.
    reading the video description and comments before extracting frames. A
    killboard sample is reported with its date window and counts; one loss is
    never presented as the "most common" fit. Only when nothing usable exists
-   does it design from scratch (asking about activity, space, and budget first).
+   does it design from scratch (asking about activity, space, and budget
+   first). For faction-warfare requests it also proposes a no-tackle variant,
+   called an "honor point" fit, usually a second webifier in the tackle slot,
+   since committed FW opponents often do not need to be held, and validates it
+   even when no published fit uses that layout.
 2. **Use current numbers.** Module stats, slots, CPU/PG, calibration and skill
    requirements come from the official EVE Static Data Export (SDE), fetched
    table by table from the `sde.evetech.net` HTTP API and cached by release, so

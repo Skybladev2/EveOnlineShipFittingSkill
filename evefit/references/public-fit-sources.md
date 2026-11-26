@@ -24,6 +24,13 @@ Use these sites as baselines. Browse is public on all of them; creating or publi
 3. Run `evefit.py validate` on it before changing anything. Old public fits often predate balance patches, so expect CPU/PG or calibration drift.
 4. Adapt toward the user's budget and skill assumptions; record what changed. If no ready-to-use fit exists, assemble one from the SDE and the fitting rules. Either path ends with `checknames` and `validate`; community reputation never replaces a formal check.
 
+Published faction-warfare fits almost always spend a mid slot on a scram or
+disruptor. That is a convention, not a requirement: in FW most opponents come
+to the plex expecting a fight and stay for it, so the tackle slot can go to a
+second webifier or other utility; pilots call this an "honor point" (or
+"honour point") fit. Treat a published FW fit as the baseline and always
+prepare a no-tackle variant next to it, validating both.
+
 Fit editors such as https://eveship.fit, https://www.eve-webtools.com/Fitlab/ and https://evefit.online can render a shared fit but are not browsable libraries, so use them only to inspect a specific link.
 
 Since most requests are for general-purpose fits rather than one known
